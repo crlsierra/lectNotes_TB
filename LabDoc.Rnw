@@ -24,7 +24,7 @@ library(SoilR)
 
 Now, we will call an external file that contains the basic implementation of the model following the SoilR syntax. This file contains the implementation of the model as a function. The name of the function is \texttt{modWengLuo}.We do not need to worry too much about the contents of this file. However, if you are interested in learning the basic workflow in SoilR you are encourage to look at the contents of this file. For the moment, we only need to tell R to load the code by writing 
 <<>>=
-source("~/Documents/Teach/BiosphereAtmosphere/modWengLuo.R")
+source("~/lectNotes_TB/modWengLuo.R")
 @
 Notice that I am telling R to load the file from an address in my personal computer. \textbf{You need to change this to the address in your computer where you have this file stored}. 
 
