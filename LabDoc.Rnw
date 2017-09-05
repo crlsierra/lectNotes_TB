@@ -1,5 +1,7 @@
 \documentclass{article}
 \usepackage{bm}
+\usepackage{hyperref}
+
 \title{Implementation of a simple ecosystem model in R}
 \author{Instructor: Carlos A. Sierra \\ Max Planck Institute for Biogeochemistry}
 
@@ -10,9 +12,10 @@
 In this document we will implement a simple eight pool model in R using the SoilR package. See the attached documentation about details on the model. 
 
 \section*{Initial set up}
-The first thing to do is to download SoilR from CRAN. You can do this directly in your R session by typing
+The first thing to do is to download \href{https://github.com/MPIBGC-TEE/SoilR-exp}{SoilR from GitHub}. You can do this directly in your R session by typing
 <<eval=FALSE>>=
-install.packages("SoilR")
+install.packages("devtools")
+devtools::install_github('MPIBGC-TEE/SoilR-exp/pkg')
 @
 
 
@@ -24,9 +27,9 @@ library(SoilR)
 
 Now, we will call an external file that contains the basic implementation of the model following the SoilR syntax. This file contains the implementation of the model as a function. The name of the function is \texttt{modWengLuo}.We do not need to worry too much about the contents of this file. However, if you are interested in learning the basic workflow in SoilR you are encourage to look at the contents of this file. For the moment, we only need to tell R to load the code by writing 
 <<>>=
-source("~/lectNotes_TB/modWengLuo.R")
+source("https://raw.githubusercontent.com/crlsierra/lectNotes_TB/master/modWengLuo.R")
 @
-Notice that I am telling R to load the file from an address in my personal computer. \textbf{You need to change this to the address in your computer where you have this file stored}. 
+Notice that I am telling R to load the file from an address in GitHub. You can also save this file locally in your compauter and read it from there. 
 
 The next step is to create a series of numbers representing the times in which we want the model to run. In this case we will run the model for 500 years on a daily time-step
 <<>>=
@@ -131,6 +134,46 @@ abline(h=U*(0.14+0.26+0.14),lty=2)
 
 These results also present some interesting aspects related to the structure of the model. 1) All simulations converge to a constant respiration flux independent on the value of the flow rates. Remember that at steady-state equilibrium the outputs are equal to the inputs and because in all cases the inputs are the same ($U \cdot {\bm b}$), then the three simulations converge to a common value of 1.82 g C m$^{-2}$ day$^{-1}$. 2) The time required to reach equilibrium depends on the value of the flow rates. The lower the flow rates the longer it takes to reach equilibrium. 3) In the three simulations there were an initial flow of respired C associated with the initial amount of C present as initial value. As carbon starts accumulating over time, this \emph{legacy effect} decreases. 
 
+\section*{Ages and transit times}
+We can calculate now the system age and the transit time distribution of this model, which are implemented in SoilR throught the function \texttt{systemAge} and \texttt{transitTime}. First we need to create a sequence of ages for plotting the results, and convert the elements of $\bm{b}$ as an R vector
+
+<<>>=
+tau=seq(0,10000)
+u=matrix(b,nrow=8,ncol=1)
+@
+
+To run the \texttt{systemAge} and \texttt{transitTime} we also need to multiply the $\bf{A}$ and $\bf{C}$ matrices
+
+<<>>=
+aLW=systemAge(A=A%*%C, u=u,a=tau)
+tLW=transitTime(A=A%*%C, u=u,a=tau)
+@
+
+Theses functions return a list with the probability density functions, the mean values, and quantiles of the distributions. 
+We can plot the results as
+
+<<fig=TRUE,echo=TRUE>>=
+par(mfrow=c(2,1), mar=c(4,4,1,1))
+plot(tau,aLW$systemAgeDensity,type="l",ylim=c(0,0.00008), xlab="Age (days)", 
+     ylab="System age density", bty="n")
+plot(tau,tLW$transitTimeDensity,col=2, type="l", xlab="Transit time (days)", 
+     ylab="Transit time density", bty="n")
+par(mfrow=c(1,1))
+@
+
+We can also explore the age distribution for each individual pool in the model as
+
+<<fig=TRUE,echo=TRUE>>=
+poolnames=c("Foliage", "Woody biomass", "Fine roots", "Metabolic litter", 
+            "Structural litter", "Fast SOM", "Slow SOM", "Passive SOM")
+par(mfrow=c(4,2))
+for(i in 1:8){
+  plot(tau,aLW$poolAgeDensity[,i],type="l", main=poolnames[i], 
+       ylab="Probability density", xlab="Age (days)", bty="n")
+}
+par(mfrow=c(1,1))
+@
+
 
 \section*{Exercises}
 Now it is your turn to run your own simulation experiments and evaluate the behavior of the model under different assumptions. The following exercises would guide you through. 
@@ -142,7 +185,8 @@ Now it is your turn to run your own simulation experiments and evaluate the beha
 \item Run other simulations in which your initial conditions are 75, 50, and 25\% of the steady-state value of the \texttt{ctrl} simulation.
 \item What can we say about the general behavior of the model? What can you infer about an ecosystem that experiences a disturbance such as fire?
 \end{itemize}
-\item It is common practice to calculate the \emph{turnover times} of carbon for each reservoir. These turnover times $\tau$ are defined as the inverse of the absolute value of the eigenvalues of the product of the matrix ${\bf A \cdot C}$, that is
+\item For the cases in which rates where doubled and reduced by half, calculate the mean age and the mean transit time. How did these changes in rates affected the ages and transit times of the system? What pools changed more drastically? 
+\item It is common practice to calculate the \emph{turnover times} of carbon for each reservoir. These turnover times $\tau$ are defined in different ways. One definition is as the inverse of the absolute value of the eigenvalues of the product of the matrix ${\bf A \cdot C}$, that is
 \begin{equation}
 \tau_i = \frac{1}{| \lambda_i |} 
 \end{equation}
@@ -151,6 +195,7 @@ Now it is your turn to run your own simulation experiments and evaluate the beha
 \item Take the absoulte value of these eigenvalues and divide them by 1.
 \item What is the range of timescales of cycling for these model? Which ones do you think cycle fast and which ones cycle slow? 
 \item An alternate definition of turnover times is the inverse of the elements of the diagonal of the matrix ${\bf C}$. Calculate these values and compare them with the ones we previously obtained. 
+\item Calculate the mean age for each pool. Compare the results from the previous approaches. 
 \end{itemize}
 \item Plot the carbon stocks in the different pools for the \texttt{ctrl} simulation. For this you need to use the function \texttt{plotCPool} from SoilR. Look at the documentation of this function by typing \texttt{?plotCPool}.
 \end{itemize}
