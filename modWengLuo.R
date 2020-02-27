@@ -19,7 +19,7 @@ modWengLuo<-function
     if(length(b)!=8) stop("b must be of length = 8")
     
     if(length(U)==1){
-      inputFluxes=BoundInFlux(
+      inputFluxes=BoundInFluxes(
         function(t){matrix(nrow=8,ncol=1,U*b)},
         t_start,
         t_end        
