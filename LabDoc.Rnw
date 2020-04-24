@@ -4,7 +4,7 @@
 
 \title{Implementation of a simple ecosystem model in R}
 \author{Instructor: Carlos A. Sierra \\ Max Planck Institute for Biogeochemistry}
-\date{March 3, 2020}
+\date{\today}
 
 \begin{document}
 \SweaveOpts{concordance=TRUE}
